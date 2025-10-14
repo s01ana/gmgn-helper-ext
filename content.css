@@ -1,0 +1,88 @@
+/* Button Styles */
+.gmgn-helper-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+  border: none;
+  color: #ffffff;
+  min-width: 60px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.gmgn-helper-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.gmgn-helper-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.gmgn-helper-buy {
+  background-color: #005500;
+}
+
+.gmgn-helper-buy:hover {
+  background-color: #005500;
+}
+
+.gmgn-helper-sell {
+  background-color: #aaaa00;
+}
+
+.gmgn-helper-sell:hover {
+  background-color: #aaaa00;
+}
+
+.gmgn-helper-button-container {
+  position: absolute;
+  right: 12px;
+  top: 55%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 100;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+/* .flex.flex-row.w-full:hover .gmgn-helper-button-container {
+  opacity: 1;
+} */
+
+/* Trading page specific styles */
+.gmgn-helper-trading-buttons {
+  margin-left: auto;
+  margin-right: 16px;
+}
+
+.gmgn-helper-trading-buttons .gmgn-helper-button {
+  opacity: 1;
+  margin-right: 0;
+  margin-left: 8px;
+}
+
+/* Animation for button click */
+@keyframes buttonPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.gmgn-helper-button-pulse {
+  animation: buttonPulse 0.4s ease;
+}
