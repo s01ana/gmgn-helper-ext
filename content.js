@@ -1,4 +1,4 @@
-const server = 'http://localhost:3000';
+const server = 'https://gmgnhelper.lcd.finance';
 
 // Initialize default settings
 let settings = {
