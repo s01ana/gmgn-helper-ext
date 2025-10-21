@@ -111,16 +111,13 @@ function createTradingPageButtons() {
 
 // Handle trading page button clicks
 async function handleTradingButtonClick(event, action, tokenAddress) {
-
-  console.log('handleTradingButtonClick, tokenAddress: ', tokenAddress);
-
   const button = event.currentTarget;
   button.classList.add('gmgn-helper-button-pulse');
 
   try {
     const metadata = await tokenMetadata(tokenAddress);
-    if (metadata.creatorStatus === 'creator_close') {
-      alert('Dev sold out!');
+    if (metadata.creatorStatus !== 'creator_hold' && metadata.creatorStatus !== 'creator_buy' && metadata.creatorStatus !== 'creator_sell') {
+      alert('Dev Sold already!');
       return;
     }
 
@@ -129,7 +126,7 @@ async function handleTradingButtonClick(event, action, tokenAddress) {
       return;
     }
 
-    const backendRes = await fetch(`${server}/order/create`, {
+    const backendRes = await fetch(`${server}/order`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -146,13 +143,15 @@ async function handleTradingButtonClick(event, action, tokenAddress) {
         orderType: action
       })
     });
+
     if (!backendRes.ok) {
       throw new Error(`Backend response failed: HTTP ${backendRes.status}`);
     }
 
     const backendData = await backendRes.json();
-    console.log('Backend response:', backendData);
-
+    if (!backendData.status) {
+      alert(backendData.message);
+    }
   } catch (error) {
     console.error('Error in trading button flow:', error.message || error);
   } finally {
@@ -204,12 +203,10 @@ async function handleButtonClick(event, action, element) {
 
   const tokenAddress = extractTokenInfo(element);
 
-  console.log('token address abbriviation: ', tokenAddress);
-
   const metadata = await tokenMetadata(tokenAddress);
 
-  if (metadata.creatorStatus === 'creator_close') {
-    alert('Dev sold out!');
+  if (metadata.creatorStatus !== 'creator_hold' && metadata.creatorStatus !== 'creator_buy' && metadata.creatorStatus !== 'creator_sell') {
+    alert('Dev Sold already!');
     return;
   }
 
@@ -218,37 +215,32 @@ async function handleButtonClick(event, action, element) {
     return;
   }
 
-  // console.log('finalTokenInfo: ', finalTokenInfo);
-  const sendData = {
-    userId: settings.userId,
-    tokenAddress: tokenAddress,
-    name: metadata.name,
-    symbol: metadata.symbol,
-    logo: metadata.logo,
-    totalSupply: metadata.totalSupply,
-    creator: metadata.creator,
-    creatorBalance: metadata.creatorBalance,
-    creatorStatus: metadata.creatorStatus,
-    orderType: action
-  }
-
-  console.log('sendData: ', sendData);
-
-  // Send to backend
-  fetch(`${server}/order/create`, {
+  const backendRes = await fetch(`${server}/order`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(sendData)
-  })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Backend response:', data);
+    body: JSON.stringify({
+      userId: settings?.userId,
+      tokenAddress: tokenAddress,
+      name: metadata.name,
+      symbol: metadata.symbol,
+      logo: metadata.logo,
+      totalSupply: metadata.totalSupply,
+      creator: metadata.creator,
+      creatorBalance: metadata.creatorBalance,
+      orderType: action
     })
-    .catch(error => {
-      console.error('Error sending to backend:', error);
-    });
+  });
+
+  if (!backendRes.ok) {
+    throw new Error(`Backend response failed: HTTP ${backendRes.status}`);
+  }
+
+  const backendData = await backendRes.json();
+  if (!backendData.status) {
+    alert(backendData.message);
+  }
 
   setTimeout(() => {
     button.classList.remove('gmgn-helper-button-pulse');
