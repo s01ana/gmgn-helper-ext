@@ -72,7 +72,7 @@ function createTradingPageButtons() {
   const bsc = document.querySelector('.flex.items-center.gap-6px.cursor-pointer').getElementsByTagName('img')[0].getAttribute('src');
   if (bsc !== '/static/img/bsc.svg') return;
 
-  const tradingPageContainer = document.querySelector('.flex.items-center.pl-16px.h-\\[70px\\].bg-bg-100.overflow-auto.gap-40px.border-b-\\[1px\\].border-b-line-100.justify-start.pr-20px');
+  const tradingPageContainer = document.querySelector('.flex.items-center.pl-16px.h-\\[70px\\].bg-bg-100.overflow-auto.gap-40px.border-b-\\[1px\\].border-b-line-100.justify-start');
   if (!tradingPageContainer || tradingPageContainer.querySelector('.gmgn-helper-trading-buttons')) return;
 
   const tradingButtonsContainer = document.createElement('div');
@@ -117,8 +117,10 @@ async function handleTradingButtonClick(event, action, tokenAddress) {
   try {
     const metadata = await tokenMetadata(tokenAddress);
     if (metadata.creatorStatus !== 'creator_hold' && metadata.creatorStatus !== 'creator_buy' && metadata.creatorStatus !== 'creator_sell') {
-      alert('Dev Sold already!');
-      return;
+      if (action !== 'cancel') {
+        alert('Dev Sold already!');
+        return;
+      }
     }
 
     if (metadata.quote !== '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c') {
@@ -195,56 +197,61 @@ function addButtonsToElement(element) {
 // Handle button clicks
 async function handleButtonClick(event, action, element) {
 
-  event.preventDefault();
-  event.stopPropagation();
+  try {
 
-  const button = event.currentTarget;
-  button.classList.add('gmgn-helper-button-pulse');
+    event.preventDefault();
+    event.stopPropagation();
 
-  const tokenAddress = extractTokenInfo(element);
+    const button = event.currentTarget;
+    button.classList.add('gmgn-helper-button-pulse');
 
-  const metadata = await tokenMetadata(tokenAddress);
+    const tokenAddress = extractTokenInfo(element);
 
-  if (metadata.creatorStatus !== 'creator_hold' && metadata.creatorStatus !== 'creator_buy' && metadata.creatorStatus !== 'creator_sell') {
-    alert('Dev Sold already!');
-    return;
+    const metadata = await tokenMetadata(tokenAddress);
+
+    if (metadata.creatorStatus !== 'creator_hold' && metadata.creatorStatus !== 'creator_buy' && metadata.creatorStatus !== 'creator_sell') {
+      alert('Dev Sold already!');
+      return;
+    }
+
+    if (metadata.quote !== '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c') {
+      alert('The quote token is not BNB, please select another token');
+      return;
+    }
+
+    const backendRes = await fetch(`${server}/order`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        userId: settings?.userId,
+        tokenAddress: tokenAddress,
+        name: metadata.name,
+        symbol: metadata.symbol,
+        logo: metadata.logo,
+        totalSupply: metadata.totalSupply,
+        creator: metadata.creator,
+        creatorBalance: metadata.creatorBalance,
+        orderType: action
+      })
+    });
+
+    if (!backendRes.ok) {
+      throw new Error(`Backend response failed: HTTP ${backendRes.status}`);
+    }
+
+    const backendData = await backendRes.json();
+    if (!backendData.status) {
+      alert(backendData.message);
+    }
+  } catch (error) {
+    console.error('Error in button click:', error.message || error);
+  } finally {
+    setTimeout(() => {
+      button.classList.remove('gmgn-helper-button-pulse');
+    }, 400);
   }
-
-  if (metadata.quote !== '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c') {
-    alert('The quote token is not BNB, please select another token');
-    return;
-  }
-
-  const backendRes = await fetch(`${server}/order`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      userId: settings?.userId,
-      tokenAddress: tokenAddress,
-      name: metadata.name,
-      symbol: metadata.symbol,
-      logo: metadata.logo,
-      totalSupply: metadata.totalSupply,
-      creator: metadata.creator,
-      creatorBalance: metadata.creatorBalance,
-      orderType: action
-    })
-  });
-
-  if (!backendRes.ok) {
-    throw new Error(`Backend response failed: HTTP ${backendRes.status}`);
-  }
-
-  const backendData = await backendRes.json();
-  if (!backendData.status) {
-    alert(backendData.message);
-  }
-
-  setTimeout(() => {
-    button.classList.remove('gmgn-helper-button-pulse');
-  }, 400);
 }
 
 // Extract token information including address
